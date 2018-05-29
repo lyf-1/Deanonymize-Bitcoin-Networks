@@ -1,0 +1,97 @@
+一. bitcoin blockchain 
+
+私钥 --- 可推导出公钥，不可逆推
+         签名，解密
+
+公钥 --- 加密 验证签名
+         公钥加密的数据，只能用私钥解密出来
+         私钥签名的数据，必须使用对应的公钥验证
+
+ECDSA算法 --- 椭圆曲线加密算法
+              私钥是一串随机数字串，ECDSA算法生成对应的公钥
+
+比特币地址 --- 区分用户账号身份的标示
+               由公钥，一系列神操作(比如SHA-256哈希运算，PIPEMD-160, Base58编码)，得到比特币地址
+
+交易 --- 每个区块至少有一个交易
+         每个区块都有挖矿交易，没有输入，只有输出
+         交易地址，就是比特币地址
+	 交易有一对一，一对多，多对一，多对多
+
+区块 --- 每个区块保存了上一个区块创建以来至今的所有交易(约10分钟左右)
+	 区块头有自己的哈希值和上一区块的哈希值
+         这样区块连接，形成区块链
+         每个用户，也是P2P中的节点，保存了完整的区块链，可以查看网络中所有的交易
+
+区块链 --- 全网节点维护，去中心化，数据可靠加密，数据不可篡改
+           隐私，用户身份匿名。
+
+
+二. bitcoin deanonymization
+一个人可能有多个比特币账户，去匿名化一个基础目标是将属于同一人的节点识别出来。
+将bitcoin network中的节点与真实身份相互关联，
+
+1. 构建 比特币收支交易网络 和 共同交易网络
+(1) 下载比特币完整客户端，找到blk.dat文件，16进制的，记录了完整的区块链
+结构化解析，提取出交易的有效信息，例如交易双方地址，金额，时间等
+！这部分要写代码
+！python -- struct模块
+
+(2) 交易网络中点 / 边
+点 --- 比特币地址
+边 --- 交易金额流向， 有向
+
+2. Mt.GOX记录了用户兑换比特币的数据【11-13年】
+兑换记录数据：www.reddit.com/r/mtgox Addresses/wiki/mtgox2014leak
+使用用户兑换比特币的记录与区块链上的交易数据对比匹配，
+找到这些用户的比特币地址。
+从复杂的网络视角对同一用户所使用的比特币地址相关联。
+(1) Mt.GOX数据中用户与比特币地址相关联
+MT.GOX数据不包含个人身份信息，也不含比特币地址
+有每笔兑换的用户身份代号。
+发现大部分用户有10个以内的地址，少数几个用户有万级的地址，
+这种用户认为是一些机构。
+
+(2)一堆操作，k-means聚类等，对网络分析。
+
+///////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+
+Breaking Bad: De-Anonymising Entity Types on the Bitcoin Blockchain
+Using Supervised Machine Learning
+
+1.可行性
+reference[9][10]已经证明了bitcoin address可聚类，并把cluster与现实世界身份相联系
+
+2.本文工作
+To what extent can we predict the category
+of a yet-unidentified cluster on the Bitcoin Blockchain?
+有data provider，但大多数还是unidentified，预测他们所属的类别。
+pre-defined categories， 若有新的类，无法解决，不过也没有更丰富的数据集
+
+3. related work
+
+4. 基础知识
+bitcoin blockchain
+entity --- 一个人或机构，拥有一个或多个bitcoin address
+cluster --- a group of address controlled by one entity
+categories --- 根据entity的主要活动或者一些特性，把每一个cluster划到一个类
+               假定一个cluster只能属于一个categories
+
+clustering methodology
+the categories used to label the clusters
+
+5 使用machine learning
+提出特征，训练分类器，测试
+期中一些类的数目极少，存在训练集unbalanced problem， 使用SMOTE方法
+
+6 future work
+** feature extract
+Furthermore, accuracy could be improved by enhanced feature engineering,
+for example by using automated time-series feature extraction.
+** 增大数据集 选择其他的分类方法，可能会提升结果
+** 增加样本数少的cluster，解决数据unbalanced问题
+** 创造更多的categories，fine-grained
+
+
+

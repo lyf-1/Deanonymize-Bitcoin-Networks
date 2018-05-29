@@ -1,0 +1,134 @@
+1. 下载完整的比特币客户端，会同步所有的区块链数据。
+数据以 blk*****.dat 文件保存在本地磁盘
+
+
+
+2. btc_parser 文件中的代码
+
+--- 解析blk.dat 文件， 能得到像block_info.txt 中说明的区块的各个组成部分
+
+--- 其中current_block_hash & transaction self hash 是不包含在区块中的，
+    这里要自己根据区块内容和交易内容，用hash的方法获得
+
+--- script， 根据交易方式不同，script的解析方式不同。有可能包含公钥，也有可能不包含
+
+    个人 YY:
+    解析起来较为麻烦，已放弃
+    肯定能解析的，不然比特币浏览器又是怎么做到的？
+
+
+
+
+3. blockchain_info_api 文件中的代码
+
+使用的是blockchain info网站提供的API --- https://blockchain.info/api/blockchain_api
+可以根据交易hash值(或比特币地址，区块地址等信息) 查询到交易的输入输出地址，时间，交易值等信息
+
+
+
+
+4. 综上，采用解析blk.dat文件的方式，获得特定范围的交易hash值
+在用blockchain info API 查询每个交易的信息，并提取出每个交易的特征
+可视化交易网络
+
+目前暂定的交易特征是 input add --- output add --- value --- timestamps
+
+!!!这里需要考虑了啊
+   要哪个时间段的交易，一个blk.dat文件中能提取出近几十万个交易 ？
+   什么样的特征？
+
+
+
+
+5. 利用提取到的特征，用k-means聚类
+首先画score-k的图，确定合适的k值
+
+多个比特币地址聚到一个类，一个类认为是一个实体用户
+
+
+
+
+
+6. 可视化聚类后的结果
+
+
+
+
+
+7. 处理样本数目不平衡问题
+类别不平衡问题：分类任务中不同类别的训练样例数目差别很大
+
+常用的一些方法 --- 
+再缩放思想，主要设计三类做法
+-- 对样本数目偏多的样例进行欠采样，即去除一些
+-- 对样本数目偏少的样例过采样，即增加一些
+-- 阈值移动，修改决策函数
+
+为什么准备用GAN？
+
+
+
+
+
+8. 就是那个关键问题了，怎么泛化非我的特征
+只提取特征，量化特征之间的相似度，设置阈值判断是否属于一个类
+
+ECOC编码可以获得样本与每个类之间的距离
+
+
+
+9. 训练RNN + 简单分类器
+RNN的性质， 为什么用RNN？
+RNN的处理时间序列的数据
+
+
+
+10. ground truth
+MT.GOX 泄露的数据集，得到btc_xfer_report.csv
+其中能利用到的有兑换金额，兑换时间，兑换时间是bitcoin进入和离开MT.GOX账户的时间
+用户个人账户 <------->MT.GOX账户
+
+2011-2013年间的记录，对应的大概就是blk00000.dat--blk00105.dat的文件
+
+找到兑换时间对应的区块，从该区块中找到交易金额与兑换金额相等的交易
+
+若是withdraw操作，则交易输出地址为用户的比特币地址，若无匹配到的交易，则往后查找区块。因为相比兑换时间，交易时间会有一定延迟
+
+若是deposit操作，则交易输入地址为用户的比特币地址，若无匹配到的交易，要往前查找区块。因为此时，用户先向MT.GOX的账户发送比特币，
+这个交易被区块链确认后才会记录在区块链上。之后MT.GOX会记录这笔depoist操作和时间。
+
+如果要保证交易的不可逆转,则要等待6个数据块完全确认,这至少需要1个小时的确认时间
+一笔交易被确认6次，也就是6个区块之后
+
+
+这部分的代码在 btc_parser folder中
+shelve_db flolder/blk0_7_time_block.db --- 存储着2011年创建的所有区块 （87267个block）
+btf_xfer_report2011.txt 存储着MT_GOX 记录的2011年的兑换记录 （271571条记录）
+对于每一条兑换记录，根据时间和金额查找区块上对应的交易，提取出bitcoin address，与用户walletID对应
+
+shelve_db100000是匹配了 10w条兑换记录（271571的前10w条）
+耗时3h左右 
+9643                     一次匹配 认为成功
+21260                    多次匹配 不能用
+10w-9643-21260    0次匹配
+代码 --- walletID_txhash.py
+综上，匹配精度不高，与信息量小（只有大约的时间和金额）匹配方法有关
+
+接上，利用匹配好的walletID_txhash, 爬虫查询对应的bicoin address，这里withdraw对应输出地址，deposit对应输入地址
+代码 --- walletID_bitcoinaddress.py
+
+//////////////////////////////////////////////////////
+MT_GOX 可能bitcoin address
+1QBcrWMPtAGEV8HcEiyjUdTVwZCnwVttR
+1Vc6REXkbPM1w84nTX9vMFACsP13sXELL  
+15YQXy5zrAFgAMxkKD3CDsw1KoE32Fiowd 
+1CxEWFHmvPoPAh7fgZkp7evgokRCtx8Lbk 
+
+
+
+
+
+
+
+
+
